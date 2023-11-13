@@ -44,11 +44,19 @@ def plot_probability_distribution(data, stockname):
 
 # Loading in dataset
 AAPL = load_dataset("AAPL")
-#DAL = load_dataset("DAL")
+DAL = load_dataset("DAL")
+F = load_dataset("F")
+FUN = load_dataset("FUN")
+GME = load_dataset("GME")
+TSLA = load_dataset("TSLA")
 
 #plot close price
 plot_closing_price(AAPL, "AAPL")
-#plot_closing_price(DAL, "DAL")
+plot_closing_price(DAL, "DAL")
+plot_closing_price(F, "F")
+plot_closing_price(FUN, "FUN")
+plot_closing_price(GME, "GME")
+plot_closing_price(TSLA, "TSLA")
 
 #plot_probability_distribution(AAPL, "AAPL")
 
