@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.seasonal import seasonal_decompose
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima.model import ARIMA
 from pmdarima.arima import auto_arima
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import math
@@ -61,7 +61,7 @@ plot_closing_price(TSLA, "TSLA")
 #plot_probability_distribution(AAPL, "AAPL")
 
 #Test for staionarity
-def test_stationarity(timeseries):
+def test_stationarity(timeseries, ticker):
     #Determing rolling statistics
     rolmean = timeseries.rolling(12).mean()
     rolstd = timeseries.rolling(12).std()
@@ -70,10 +70,11 @@ def test_stationarity(timeseries):
     plt.plot(rolmean, color='red', label='Rolling Mean')
     plt.plot(rolstd, color='black', label = 'Rolling Std')
     plt.legend(loc='best')
-    plt.title('Rolling Mean and Standard Deviation')
-    plt.savefig('../FIGURES/test1')
+    plt.title('Rolling Mean and Standard Deviation of ' + ticker)
+    filepath = "../FIGURES/"+ticker+"_stationarity"
+    plt.savefig(filepath)
     plt.show(block=False)
-    print("Results of dickey fuller test")
+    print("Results of dickey fuller test for", ticker)
     plt.close()
     adft = adfuller(timeseries,autolag='AIC')
     # output for dft will give us without defining what the values are.
@@ -83,18 +84,138 @@ def test_stationarity(timeseries):
         output['critical value (%s)'%key] =  values
     print(output)
 
-test_stationarity(AAPL['Close/Last'])
+test_stationarity(AAPL['Close/Last'], "AAPL")
+test_stationarity(DAL['Close/Last'], "DAL")
+test_stationarity(F['Close/Last'],"F" )
+test_stationarity(FUN['Close/Last'], "FUN")
+test_stationarity(GME['Close/Last'], "GME")
+test_stationarity(TSLA['Close/Last'], "TSLA")
+
 
 #eliminate trend if not stationary
 from matplotlib import rcParams
-rcParams['figure.figsize'] = 10, 6
-df_log = np.log(AAPL['Close/Last'])
-moving_avg = df_log.rolling(12).mean()
-std_dev = df_log.rolling(12).std()
-plt.legend(loc='best')
-plt.title('Moving Average')
-plt.plot(std_dev, color ="black", label = "Standard Deviation")
-plt.plot(moving_avg, color="red", label = "Mean")
-plt.legend()
-plt.savefig('../FIGURES/test2')
-plt.close()
+def eliminate_trends(data,stockname): 
+    rcParams['figure.figsize'] = 10, 6
+    df_log = np.log(data['Close/Last'])
+    moving_avg = df_log.rolling(12).mean()
+    std_dev = df_log.rolling(12).std()
+    plt.title('Moving Average')
+    plt.plot(std_dev, color ="black", label = "Standard Deviation")
+    plt.plot(moving_avg, color="red", label = "Mean")
+    plt.legend()
+    filepath = "../FIGURES/" + stockname + "_Eliminate_Trends_Plot"
+    plt.savefig(filepath)
+    plt.close()
+    return df_log
+
+AAPL = eliminate_trends(AAPL, "AAPL")
+DAL = eliminate_trends(DAL, "DAL")
+F = eliminate_trends(F, "F")
+FUN = eliminate_trends(FUN, "FUN")
+GME = eliminate_trends(GME, "GME")
+TSLA = eliminate_trends(TSLA, "TSLA")
+
+
+#looks specifically to split on the date 
+def split_data(df_log, ticker):
+    train_data, test_data = df_log[256:], df_log[5:256]
+    plt.figure(figsize=(10,6))
+    plt.grid(True)
+    plt.xlabel('Dates')
+    plt.ylabel('Closing Prices')
+    plt.plot(df_log, 'green', label='Train data')
+    plt.plot(test_data, 'blue', label='Test data')
+    plt.legend()
+    filepath = "../FIGURES/" + ticker + "_test_train_split"
+    plt.savefig(filepath)
+    return train_data, test_data
+
+AAPL_train, AAPL_test = split_data(AAPL, "AAPL")
+DAL_train, DAL_test = split_data(DAL, "DAL")
+F_train, F_test = split_data(F, "F")
+FUN_train, FUN_test = split_data(FUN, "FUN")
+GME_train, GME_test = split_data(GME, "GME")
+TSLA_train, TSLA_test = split_data(TSLA, "TSLA")
+
+def find_model_params(train_data):
+    model_autoARIMA = auto_arima(train_data, start_p=0, start_q=0,
+        test='adf',       # use adftest to find optimal 'd'
+        max_p=5, max_q=5, # maximum p and q
+        m=1,              # frequency of series
+        d=None,           # let model determine 'd'
+        seasonal=False,   # No Seasonality
+        start_P=0, 
+        D=0, 
+        trace=True,
+        error_action='ignore',  
+        suppress_warnings=True, 
+        stepwise=True)
+    return model_autoARIMA
+
+AAPL_model = find_model_params(AAPL_train) #1,1,0
+print(AAPL_model.summary())
+DAL_model = find_model_params(DAL_train) #3,1,0
+print(DAL_model.summary())
+F_model = find_model_params(F_train) #0,1,0
+print(F_model.summary())
+FUN_model = find_model_params(FUN_train) #1,1,0
+print(FUN_model.summary())
+GME_model = find_model_params(GME_train) #0,1,0
+print(GME_model.summary())
+TSLA_model = find_model_params(TSLA_train) #0,1,0
+print(TSLA_model.summary())
+
+def train_and_fit_model(data, order):
+    model = ARIMA(data, order=order)  
+    fitted = model.fit()  
+    print(fitted.summary())
+    return fitted
+
+print("BREAK\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+
+AAPL_fitted = train_and_fit_model(AAPL_train, (1,1,0))
+DAL_fitted = train_and_fit_model(DAL_train, (3,1,0))
+F_fitted = train_and_fit_model(F_train, (0,1,0))
+FUN_fitted = train_and_fit_model(FUN_train, (1,1,0))
+GME_fitted = train_and_fit_model(GME_train, (0,1,0))
+TSLA_fitted = train_and_fit_model(TSLA_train, (0,1,0))
+
+
+def forecast_and_analyze(train_data, test_data, fitted, ticker):
+    # Forecast
+    fc = fitted.forecast(321, alpha=0.05)  # 95% conf
+
+    # Make as pandas series
+    fc_series = pd.Series(fc, index=test_data.index)
+    # lower_series = pd.Series(conf[:, 0], index=test_data.index)
+    # upper_series = pd.Series(conf[:, 1], index=test_data.index)
+    # Plot
+    plt.figure(figsize=(10,5), dpi=100)
+    plt.plot(train_data, label='training data')
+    plt.plot(test_data, color = 'blue', label='Actual Stock Price')
+    plt.plot(fc_series, color = 'orange',label='Predicted Stock Price')
+    #plt.fill_between(lower_series.index, lower_series, upper_series, color='k', alpha=.10)
+    plt.title(ticker+ ' Stock Price Prediction')
+    plt.xlabel('Time')
+    plt.ylabel(ticker + ' Stock Price')
+    plt.legend(loc='upper left', fontsize=8)
+    filepath = "../FIGURES/"+ticker+"_prediction"
+    plt.savefig(filepath)
+
+    # report performance
+    print(ticker + " performance:")
+    mse = mean_squared_error(test_data, fc)
+    print('MSE: '+str(mse))
+    mae = mean_absolute_error(test_data, fc)
+    print('MAE: '+str(mae))
+    rmse = math.sqrt(mean_squared_error(test_data, fc))
+    print('RMSE: '+str(rmse))
+    mape = np.mean(np.abs(fc - test_data)/np.abs(test_data))
+    print('MAPE: '+str(mape))
+
+forecast_and_analyze(AAPL_train, AAPL_test, AAPL_fitted, "AAPL")
+forecast_and_analyze(DAL_train, DAL_test, DAL_fitted, "DAL")
+forecast_and_analyze(F_train, F_test, F_fitted, "F")
+forecast_and_analyze(FUN_train, FUN_test, FUN_fitted, "FUN")
+forecast_and_analyze(GME_train, GME_test, GME_fitted, "GME")
+forecast_and_analyze(TSLA_train, TSLA_test, TSLA_fitted, "TSLA")
