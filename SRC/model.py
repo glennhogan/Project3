@@ -36,7 +36,8 @@ def plot_closing_price(data, stockname):
 # Load the dataset and clean it
 def load_dataset(stockname):
     filepath = '../DATA/' + stockname + '_Data.csv'
-    return remove_dollar_signs(pd.read_csv(filepath, sep=',', index_col='Date', parse_dates=['Date']))
+    data = remove_dollar_signs(pd.read_csv(filepath, sep=',', index_col='Date', parse_dates=['Date']))
+    return data[::-1]
 
 def plot_probability_distribution(data, stockname):
     df_close = data['Close/Last']
@@ -118,7 +119,7 @@ TSLA = eliminate_trends(TSLA, "TSLA")
 
 #looks specifically to split on the date 
 def split_data(df_log, ticker):
-    train_data, test_data = df_log[256:], df_log[5:256]
+    train_data, test_data = df_log[:len(df_log)-260], df_log[len(df_log)-260:]
     plt.figure(figsize=(10,6))
     plt.grid(True)
     plt.xlabel('Dates')
@@ -183,17 +184,23 @@ TSLA_fitted = train_and_fit_model(TSLA_train, (0,1,0))
 
 def forecast_and_analyze(train_data, test_data, fitted, ticker):
     # Forecast
-    fc = fitted.forecast(321, alpha=0.05)  # 95% conf
+    fc = fitted.forecast(len(test_data), alpha=0.05)  # 95% conf
+
+    print(type(test_data))
+    print("test_data:", test_data)
+    print("fc:", fc)
 
     # Make as pandas series
-    fc_series = pd.Series(fc, index=test_data.index)
+    #fc_series = pd.Series(fc, index=test_data.index)
+    combined_series = pd.Series(fc.values, index=test_data.index + pd.to_timedelta(fc.index, unit='D'))
     # lower_series = pd.Series(conf[:, 0], index=test_data.index)
     # upper_series = pd.Series(conf[:, 1], index=test_data.index)
     # Plot
+    print("fc_series: ", combined_series)
     plt.figure(figsize=(10,5), dpi=100)
-    plt.plot(train_data, label='training data')
-    plt.plot(test_data, color = 'blue', label='Actual Stock Price')
-    plt.plot(fc_series, color = 'orange',label='Predicted Stock Price')
+    # plt.plot(train_data, label='training data')
+    # plt.plot(test_data, color = 'blue', label='Actual Stock Price')
+    plt.plot(combined_series, color = 'orange',label='Predicted Stock Price')
     #plt.fill_between(lower_series.index, lower_series, upper_series, color='k', alpha=.10)
     plt.title(ticker+ ' Stock Price Prediction')
     plt.xlabel('Time')
@@ -210,8 +217,8 @@ def forecast_and_analyze(train_data, test_data, fitted, ticker):
     print('MAE: '+str(mae))
     rmse = math.sqrt(mean_squared_error(test_data, fc))
     print('RMSE: '+str(rmse))
-    mape = np.mean(np.abs(fc - test_data)/np.abs(test_data))
-    print('MAPE: '+str(mape))
+    # mape = np.mean(np.abs(fc - test_data)/np.abs(test_data))
+    # print('MAPE: '+str(mape))
 
 forecast_and_analyze(AAPL_train, AAPL_test, AAPL_fitted, "AAPL")
 forecast_and_analyze(DAL_train, DAL_test, DAL_fitted, "DAL")
@@ -219,3 +226,5 @@ forecast_and_analyze(F_train, F_test, F_fitted, "F")
 forecast_and_analyze(FUN_train, FUN_test, FUN_fitted, "FUN")
 forecast_and_analyze(GME_train, GME_test, GME_fitted, "GME")
 forecast_and_analyze(TSLA_train, TSLA_test, TSLA_fitted, "TSLA")
+
+
