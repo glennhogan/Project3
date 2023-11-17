@@ -192,14 +192,17 @@ def forecast_and_analyze(train_data, test_data, fitted, ticker):
 
     # Make as pandas series
     #fc_series = pd.Series(fc, index=test_data.index)
-    combined_series = pd.Series(fc.values, index=test_data.index + pd.to_timedelta(fc.index, unit='D'))
+    #combined_series = pd.Series(fc.values, index=test_data.index + pd.to_timedelta(fc.index, unit='D'))
+
+    combined_series = pd.Series(fc.values, index=test_data.index)
+
     # lower_series = pd.Series(conf[:, 0], index=test_data.index)
     # upper_series = pd.Series(conf[:, 1], index=test_data.index)
     # Plot
     print("fc_series: ", combined_series)
     plt.figure(figsize=(10,5), dpi=100)
-    # plt.plot(train_data, label='training data')
-    # plt.plot(test_data, color = 'blue', label='Actual Stock Price')
+    plt.plot(train_data, label='training data')
+    plt.plot(test_data, color = 'blue', label='Actual Stock Price')
     plt.plot(combined_series, color = 'orange',label='Predicted Stock Price')
     #plt.fill_between(lower_series.index, lower_series, upper_series, color='k', alpha=.10)
     plt.title(ticker+ ' Stock Price Prediction')
