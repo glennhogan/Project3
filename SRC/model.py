@@ -109,13 +109,19 @@ def eliminate_trends(data,stockname):
     plt.close()
     return df_log
 
-AAPL = eliminate_trends(AAPL, "AAPL")
-DAL = eliminate_trends(DAL, "DAL")
-F = eliminate_trends(F, "F")
-FUN = eliminate_trends(FUN, "FUN")
-GME = eliminate_trends(GME, "GME")
-TSLA = eliminate_trends(TSLA, "TSLA")
+#AAPL = eliminate_trends(AAPL, "AAPL")
+#DAL = eliminate_trends(DAL, "DAL")
+#F = eliminate_trends(F, "F")
+#FUN = eliminate_trends(FUN, "FUN")
+#GME = eliminate_trends(GME, "GME")
+#TSLA = eliminate_trends(TSLA, "TSLA")
 
+AAPL = AAPL['Close/Last']
+DAL = DAL['Close/Last']
+F = F['Close/Last']
+FUN = FUN['Close/Last']
+GME = GME['Close/Last']
+TSLA = TSLA['Close/Last']
 
 #looks specifically to split on the date 
 def split_data(df_log, ticker):
@@ -193,6 +199,13 @@ def forecast_and_analyze(train_data, test_data, fitted, ticker):
     # Make as pandas series
     #fc_series = pd.Series(fc, index=test_data.index)
     #combined_series = pd.Series(fc.values, index=test_data.index + pd.to_timedelta(fc.index, unit='D'))
+    # Forecasting the next 'n' steps
+    n_steps = 260
+    forecast_result = fitted.get_forecast(steps=n_steps)
+
+    # Extract the forecast and the confidence interval
+    forecast = forecast_result.predicted_mean
+    conf_int = forecast_result.conf_int(alpha=0.05)  # 95% confidence interval
 
     combined_series = pd.Series(fc.values, index=test_data.index)
 
@@ -205,6 +218,10 @@ def forecast_and_analyze(train_data, test_data, fitted, ticker):
     plt.plot(test_data, color = 'blue', label='Actual Stock Price')
     plt.plot(combined_series, color = 'orange',label='Predicted Stock Price')
     #plt.fill_between(lower_series.index, lower_series, upper_series, color='k', alpha=.10)
+    plt.fill_between(combined_series.index, 
+                 conf_int.iloc[:, 0], 
+                 conf_int.iloc[:, 1], 
+                 color='k', alpha=0.1, label='95% Confidence Interval')
     plt.title(ticker+ ' Stock Price Prediction')
     plt.xlabel('Time')
     plt.ylabel(ticker + ' Stock Price')
