@@ -145,31 +145,58 @@ GME_train, GME_test = split_data(GME, "GME")
 TSLA_train, TSLA_test = split_data(TSLA, "TSLA")
 
 def find_model_params(train_data):
-    model_autoARIMA = auto_arima(train_data, start_p=0, start_q=0,
-        test='adf',       # use adftest to find optimal 'd'
-        max_p=5, max_q=5, # maximum p and q
-        m=1,              # frequency of series
-        d=None,           # let model determine 'd'
-        seasonal=False,   # No Seasonality
-        start_P=0, 
-        D=0, 
-        trace=True,
-        error_action='ignore',  
-        suppress_warnings=True, 
-        stepwise=True)
-    return model_autoARIMA
+    # model_autoARIMA = auto_arima(train_data, start_p=0, start_q=0,
+    #     test='adf',       # use adftest to find optimal 'd'
+    #     max_p=7, max_q=7, # maximum p and q
+    #     m=1,              # frequency of series
+    #     d=None,           # let model determine 'd'
+    #     seasonal=False,   # No Seasonality
+    #     start_P=0, 
+    #     D=0, 
+    #     trace=True,
+    #     error_action='ignore',  
+    #     suppress_warnings=True, 
+    #     stepwise=True)
+
+    p_values = range(0, 6)
+    d_values = range(0, 3)
+    q_values = range(0, 6)
+
+    best_model = auto_arima(
+        train_data,
+        seasonal=False,
+        #m=12,  # Adjust according to your data's seasonality
+        suppress_warnings=True,
+        stepwise=False,
+        trace=False,
+        error_action='ignore',
+        scoring='mse',
+        start_p=0,
+        start_q=0,
+        max_p=5,
+        max_q=5,
+        d=None,  # Let the model determine 'd'
+        D=None,  # Let the model determine 'D'
+        random=True,  # Use random search instead of grid search
+        n_fits=30,  # Number of models to fit
+        p_values=p_values,
+        d_values=d_values,
+        q_values=q_values
+    )
+
+    return best_model
 
 AAPL_model = find_model_params(AAPL_train) #1,1,0
 print(AAPL_model.summary())
-DAL_model = find_model_params(DAL_train) #3,1,0
+DAL_model = find_model_params(DAL_train) #3,1,0       0,1,5
 print(DAL_model.summary())
 F_model = find_model_params(F_train) #0,1,0
 print(F_model.summary())
-FUN_model = find_model_params(FUN_train) #1,1,0
+FUN_model = find_model_params(FUN_train) #1,1,0    0, 1, 2
 print(FUN_model.summary())
-GME_model = find_model_params(GME_train) #0,1,0
+GME_model = find_model_params(GME_train) #0,1,0      4, 1, 0
 print(GME_model.summary())
-TSLA_model = find_model_params(TSLA_train) #0,1,0
+TSLA_model = find_model_params(TSLA_train) #0,1,0     2, 1, 3
 print(TSLA_model.summary())
 
 def train_and_fit_model(data, order):
@@ -181,20 +208,32 @@ def train_and_fit_model(data, order):
 print("BREAK\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
 
 AAPL_fitted = train_and_fit_model(AAPL_train, (1,1,0))
-DAL_fitted = train_and_fit_model(DAL_train, (3,1,0))
+DAL_fitted = train_and_fit_model(DAL_train, (0,1,5))
 F_fitted = train_and_fit_model(F_train, (0,1,0))
-FUN_fitted = train_and_fit_model(FUN_train, (1,1,0))
-GME_fitted = train_and_fit_model(GME_train, (0,1,0))
-TSLA_fitted = train_and_fit_model(TSLA_train, (0,1,0))
+FUN_fitted = train_and_fit_model(FUN_train, (0,1,2))
+GME_fitted = train_and_fit_model(GME_train, (4,1,0))
+TSLA_fitted = train_and_fit_model(TSLA_train, (2,1,3))
 
 
 def forecast_and_analyze(train_data, test_data, fitted, ticker):
     # Forecast
     fc = fitted.forecast(len(test_data), alpha=0.05)  # 95% conf
 
-    print(type(test_data))
-    print("test_data:", test_data)
-    print("fc:", fc)
+    #getting confidence intervals
+    forecast_index = range(len(fitted.fittedvalues), len(fitted.fittedvalues) + len(test_data))
+    #forecast_df = pd.DataFrame(index=forecast_index)
+    forecast_obj = fitted.get_forecast(steps=len(test_data))
+    conf_int = forecast_obj.conf_int(alpha=0.05)
+
+    lower_bound = conf_int.iloc[:, 0]
+    upper_bound = conf_int.iloc[:, 1]
+
+    lower_series = pd.Series(lower_bound, index=test_data.index)
+    upper_series = pd.Series(upper_bound, index=test_data.index)
+
+    # print(type(test_data))
+    # print("test_data:", test_data)
+    # print("fc:", fc)
 
     # Make as pandas series
     #fc_series = pd.Series(fc, index=test_data.index)
@@ -212,7 +251,7 @@ def forecast_and_analyze(train_data, test_data, fitted, ticker):
     # lower_series = pd.Series(conf[:, 0], index=test_data.index)
     # upper_series = pd.Series(conf[:, 1], index=test_data.index)
     # Plot
-    print("fc_series: ", combined_series)
+    #print("fc_series: ", combined_series)
     plt.figure(figsize=(10,5), dpi=100)
     plt.plot(train_data, label='training data')
     plt.plot(test_data, color = 'blue', label='Actual Stock Price')
