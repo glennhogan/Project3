@@ -40,7 +40,6 @@ def plot_price_evolution(df, stockname):
     plt.close()
 
 def build_arima_model(df, stockname):
-    # train_data, test_data = df[0:int(len(df)*0.7)], df[int(len(df)*0.7):]
     start_date = '2022-11-01'
     end_date = '2023-11-10'
     test = df.loc[start_date:end_date]
@@ -60,14 +59,12 @@ def build_arima_model(df, stockname):
         history.append(true_test_value)
     MSE_error = mean_squared_error(test_data, model_predictions)
     print('Testing Mean Squared Error is {}'.format(MSE_error))
-    # test_set_range = df[int(len(df)*0.7):].index
     test_set_range = test.index
     plt.plot(test_set_range, model_predictions, color='blue', marker='o', linestyle='dashed',label='Predicted Price')
     plt.plot(test_set_range, test_data, color='red', label='Actual Price')
-    plt.title('TESLA Prices Prediction')
+    plt.title(f'{stockname} Prices Prediction')
     plt.xlabel('Date')
     plt.ylabel('Prices')
-    # plt.xticks(np.arange(881,1259,50), df.index[881:1259:50])
     monthly_ticks = pd.date_range(start=start_date, end=end_date, freq='MS')
     plt.xticks(monthly_ticks, [date.strftime('%m-%d-%Y') for date in monthly_ticks])
     plt.gcf().autofmt_xdate()
