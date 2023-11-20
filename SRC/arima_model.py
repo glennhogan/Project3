@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt
 from pandas.plotting import lag_plot
-from pandas import datetime
+from datetime import datetime
 from statsmodels.tsa.arima.model import ARIMA
 from sklearn.metrics import mean_squared_error
 
@@ -17,7 +17,7 @@ def remove_dollar_signs(data):
     return data
 
 def load_dataset(stockname):
-    # filepath = '../DATA/' + stockname + '_Data.csv'
+    #filepath = '../DATA/' + stockname + '_Data.csv'
     filepath = 'DATA/' + stockname + '_Data.csv'
     data = remove_dollar_signs(pd.read_csv(filepath, sep=',', index_col='Date', parse_dates=['Date']))
     return data[::-1]
@@ -26,7 +26,7 @@ def check_cross_correlation(df, stockname):
     plt.figure()
     lag_plot(df['Open'], lag=3)
     plt.title(f'{stockname} Stock - Autocorrelation plot with lag = 3')
-    plt.savefig("FIGURES/" + stockname + "_Autocorrelation")
+    plt.savefig("../FIGURES/" + stockname + "_Autocorrelation")
     plt.close()
 
 def plot_price_evolution(df, stockname):
@@ -36,12 +36,13 @@ def plot_price_evolution(df, stockname):
     plt.title(f"{stockname} stock price over time")
     plt.xlabel("time")
     plt.ylabel("price")
-    plt.savefig("FIGURES/" + stockname + "_Price_Evolution")
+    plt.savefig("../FIGURES/" + stockname + "_Price_Evolution")
     plt.close()
 
 def build_arima_model(df, stockname):
     start_date = '2022-11-01'
     end_date = '2023-11-10'
+    #end_date = '2022-12-01'
     test = df.loc[start_date:end_date]
     train = df.loc[~((df.index >= start_date) & (df.index <= end_date))]
     training_data = train['Close/Last'].values
@@ -58,7 +59,9 @@ def build_arima_model(df, stockname):
         true_test_value = test_data[time_point]
         history.append(true_test_value)
     MSE_error = mean_squared_error(test_data, model_predictions)
+    RMSE_error = np.sqrt(MSE_error)
     print('Testing Mean Squared Error is {}'.format(MSE_error))
+    print('Testing Root Mean Squared Error is {}'.format(RMSE_error))
     test_set_range = test.index
     plt.plot(test_set_range, model_predictions, color='blue', marker='o', linestyle='dashed',label='Predicted Price')
     plt.plot(test_set_range, test_data, color='red', label='Actual Price')
@@ -69,7 +72,7 @@ def build_arima_model(df, stockname):
     plt.xticks(monthly_ticks, [date.strftime('%m-%d-%Y') for date in monthly_ticks])
     plt.gcf().autofmt_xdate()
     plt.legend()
-    plt.savefig("FIGURES/" + stockname + "_Predicted_Prices")
+    plt.savefig("../FIGURES/" + stockname + "_Predicted_Prices")
     plt.close()
     
 
