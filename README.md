@@ -12,7 +12,7 @@ Install the following python libraries in order to run the code
 - ```pip install statsmodels```
 
 ### Code Usage
-To run our model use the command ```python3 model.py``` from within the SRC folder. You must also create a FIGURES folder at the same level as the SRC folder beforehand so the charts save properly. Your data must be stored in the same format as the provided data and have the filename TICKER_Data.csv. Note in the code our test and train is split manually rather than by a certain portion of the data. If a different split is desired, the code in `split_data` must be modified accordingly. 
+To run our models use the commands ```python3 model.py```, ```python3 arima_model.py```, and ```python3 keras_model.py``` from within the SRC folder. You must also create a FIGURES folder at the same level as the SRC folder beforehand so the charts save properly. Your data must be stored in the same format as the provided data and have the filename TICKER_Data.csv. Note in the code our test and train is split manually rather than by a certain portion of the data. If a different split is desired, the code in `split_data` must be modified accordingly. 
 
 ## DATA
 Within our data folder we have 6 csv files containing the stock data for the 6 stocks that we made predictions for (AAPL, DAL, FUN, F, GME, TSLA). This data is taken from the NASDAQ website [1]. The dates for each stock range from 11/12/2013 to 11/10/2023. Descriptions of the specific attributes for each data entry are in the data dictionary below. NASDAQ only allows access to the last 10 years of data, so data downloaded from the site after 11/10/2023 will not be able to go back as far as the data stored in this repository. 
@@ -38,6 +38,7 @@ Within our data folder we have 6 csv files containing the stock data for the 6 s
 | TICKER_stationarity.png | Plot exploring the initial stationarity of the data before modifying the data to make it stationary | 
 | TICKER_test_train_split.png | Plot of the actual closing stock price from 11/12/2013 to 11/10/2023, with the colors indicating where the training and testing data starts and stops  | 
 | TICKER_Autocorrelation.png | Plot that checks if there's auto-correlation in the stock data, a linear trend means the ARIMA model is appropriate|
+| TICKER_Predicted_Prices_Month.png | Plot of the predicted stock prices for each month from 11/01/2022 to 12/01/2023|
 
 
 

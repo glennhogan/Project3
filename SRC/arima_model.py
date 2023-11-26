@@ -17,8 +17,8 @@ def remove_dollar_signs(data):
     return data
 
 def load_dataset(stockname):
-    #filepath = '../DATA/' + stockname + '_Data.csv'
-    filepath = 'DATA/' + stockname + '_Data.csv'
+    filepath = '../DATA/' + stockname + '_Data.csv'
+    #filepath = 'DATA/' + stockname + '_Data.csv'
     data = remove_dollar_signs(pd.read_csv(filepath, sep=',', index_col='Date', parse_dates=['Date']))
     return data[::-1]
 
@@ -41,8 +41,8 @@ def plot_price_evolution(df, stockname):
 
 def build_arima_model(df, stockname):
     start_date = '2022-11-01'
-    end_date = '2023-11-10'
-    #end_date = '2022-12-01'
+    #end_date = '2023-11-10'
+    end_date = '2022-12-01'
     test = df.loc[start_date:end_date]
     train = df.loc[~((df.index >= start_date) & (df.index <= end_date))]
     training_data = train['Close/Last'].values
@@ -68,11 +68,12 @@ def build_arima_model(df, stockname):
     plt.title(f'{stockname} Prices Prediction')
     plt.xlabel('Date')
     plt.ylabel('Prices')
-    monthly_ticks = pd.date_range(start=start_date, end=end_date, freq='MS')
-    plt.xticks(monthly_ticks, [date.strftime('%m-%d-%Y') for date in monthly_ticks])
+    #monthly_ticks = pd.date_range(start=start_date, end=end_date, freq='MS')
+    daily_ticks = pd.date_range(start=start_date, end=end_date, freq='W')
+    plt.xticks(daily_ticks, [date.strftime('%m-%d-%Y') for date in daily_ticks])
     plt.gcf().autofmt_xdate()
     plt.legend()
-    plt.savefig("../FIGURES/" + stockname + "_Predicted_Prices")
+    plt.savefig("../FIGURES/" + stockname + "_Predicted_Prices_Month")
     plt.close()
     
 
